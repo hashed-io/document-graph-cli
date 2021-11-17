@@ -1,4 +1,5 @@
 EosioEndpoint: http://localhost:8888
 AssetsAsFloat: true
 Contract: documents2
-UserAccount: eosio
+UserAccount: johnnyhypha1
+GeneratedDir: _generated
