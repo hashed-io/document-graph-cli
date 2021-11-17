@@ -1,3 +1,3 @@
-EosioEndpoint: https://test.telos.kitchen
+EosioEndpoint: http://test.telos.kitchen
 AssetsAsFloat: true
 DAOContract: dao.hypha

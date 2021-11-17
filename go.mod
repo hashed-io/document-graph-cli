@@ -4,6 +4,8 @@ go 1.16
 
 require (
 	github.com/alexeyco/simpletable v1.0.0
+	github.com/bxcodec/faker/v3 v3.6.0
+	github.com/digital-scarcity/eos-go-test v0.0.0-20210823154044-8e78e165bb94
 	github.com/eoscanada/eos-go v0.10.0
 	github.com/eoscanada/eosc v1.4.0
 	github.com/hashed-io/document-graph/docgraph v0.0.0-20211110190012-b466e86b1d60
