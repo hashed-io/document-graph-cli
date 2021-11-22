@@ -241,8 +241,8 @@ github.com/gopherjs/gopherjs v0.0.0-20181017120253-0766667cb4d1/go.mod h1:wJfORR
 github.com/gorilla/websocket v1.4.1-0.20190629185528-ae1634f6a989/go.mod h1:E7qHFY5m1UJ88s3WnNqhKjPHQ0heANvMoAMk2YaljkQ=
 github.com/graph-gophers/graphql-go v0.0.0-20191115155744-f33e81362277/go.mod h1:9CQHMSxwO4MprSdzoIEobiHpoLtHm77vfxsvsIN5Vuc=
 github.com/grpc-ecosystem/grpc-gateway v1.16.0/go.mod h1:BDjrQk3hbvj6Nolgz8mAMFbcEtjT1g+wF4CSlocrBnw=
-github.com/hashed-io/document-graph/docgraph v0.0.0-20211110190012-b466e86b1d60 h1:mkgwfn1EYKmJZ2LSsqCQnWCA0/bjPprUKDU8wG0MAbo=
-github.com/hashed-io/document-graph/docgraph v0.0.0-20211110190012-b466e86b1d60/go.mod h1:1HMmj20Fpq0IvVAIoWuUz5oOg7qNLbm5aQOJjhqP4Sg=
+github.com/hashed-io/document-graph/docgraph v0.0.0-20211117203619-292ec2eab14d h1:i7s3/6Xjm453Ev/abbKM5KRo/XgcvLWby0rY2Ynowjc=
+github.com/hashed-io/document-graph/docgraph v0.0.0-20211117203619-292ec2eab14d/go.mod h1:1HMmj20Fpq0IvVAIoWuUz5oOg7qNLbm5aQOJjhqP4Sg=
 github.com/hashicorp/consul/api v1.1.0/go.mod h1:VmuI/Lkw1nC05EYQWNKwWGbkg+FbDBtguAZLlVdkD9Q=
 github.com/hashicorp/consul/api v1.10.1/go.mod h1:XjsvQN+RJGWI2TWy1/kqaE16HrR2J/FWgkYjdZQsX9M=
 github.com/hashicorp/consul/sdk v0.1.1/go.mod h1:VKf9jXwCTEY1QZP2MOLRhb5i/I/ssyNV1vwHyQBF0x8=

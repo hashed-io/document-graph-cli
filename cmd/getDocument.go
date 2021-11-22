@@ -180,12 +180,12 @@ func getPage(ctx context.Context, api *eos.API, pageCache, documentCache *cache.
 
 	for i, edge := range page.FromEdges {
 
-		document := getDocument(ctx, api, documentCache, contract, edge.ToNode.String())
+		document := getDocument(ctx, api, documentCache, contract, strconv.Itoa(int(edge.ToNode)))
 
 		page.EdgePrompts[i] = edgeChoice{
 			Name:        edge.EdgeName,
 			Forward:     true,
-			To:          edge.ToNode.String(),
+			To:          strconv.Itoa(int(edge.ToNode)),
 			ToType:      getType(&document),
 			ToLabel:     getLabel(&document),
 			CreatedDate: edge.CreatedDate,
@@ -197,12 +197,12 @@ func getPage(ctx context.Context, api *eos.API, pageCache, documentCache *cache.
 
 	for i, edge := range page.ToEdges {
 
-		document := getDocument(ctx, api, documentCache, contract, edge.FromNode.String())
+		document := getDocument(ctx, api, documentCache, contract, strconv.Itoa(int(edge.FromNode)))
 
 		page.EdgePrompts[i+len(page.FromEdges)] = edgeChoice{
 			Name:        edge.EdgeName,
 			Forward:     false,
-			To:          edge.FromNode.String(),
+			To:          strconv.Itoa(int(edge.FromNode)),
 			ToType:      getType(&document),
 			ToLabel:     getLabel(&document),
 			CreatedDate: edge.CreatedDate,
@@ -249,11 +249,11 @@ func loadCache(ctx context.Context, api *eos.API, pages, documents *cache.Cache,
 		page := getPage(ctx, api, pages, documents, contract, startingNode)
 
 		for _, edge := range page.ToEdges {
-			getPage(ctx, api, pages, documents, contract, edge.ToNode.String())
+			getPage(ctx, api, pages, documents, contract, strconv.Itoa(int(edge.ToNode)))
 		}
 
 		for _, edge := range page.FromEdges {
-			getPage(ctx, api, pages, documents, contract, edge.ToNode.String())
+			getPage(ctx, api, pages, documents, contract, strconv.Itoa(int(edge.ToNode)))
 		}
 	}()
 }
@@ -338,7 +338,7 @@ var getDocumentCmd = &cobra.Command{
 
 				i, _, err := prompt2.Run()
 				if err != nil {
-					return fmt.Errorf("Prompt failed %v\n", err)
+					return fmt.Errorf("prompt failed %v", err)
 				}
 
 				fmt.Println()

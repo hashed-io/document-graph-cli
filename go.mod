@@ -8,7 +8,7 @@ require (
 	github.com/digital-scarcity/eos-go-test v0.0.0-20210823154044-8e78e165bb94
 	github.com/eoscanada/eos-go v0.10.0
 	github.com/eoscanada/eosc v1.4.0
-	github.com/hashed-io/document-graph/docgraph v0.0.0-20211110190012-b466e86b1d60
+	github.com/hashed-io/document-graph/docgraph v0.0.0-20211117203619-292ec2eab14d
 	github.com/leekchan/accounting v1.0.0
 	github.com/manifoldco/promptui v0.9.0
 	github.com/patrickmn/go-cache v2.1.0+incompatible

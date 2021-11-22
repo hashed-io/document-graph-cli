@@ -36,16 +36,16 @@ func EdgeTable(edges []docgraph.Edge, overLabelSelf, fromSelf bool) *simpletable
 			if fromSelf {
 				r = append(r, &simpletable.Cell{Align: simpletable.AlignRight, Text: "[ self ]"},
 					&simpletable.Cell{Align: simpletable.AlignRight, Text: string(edge.EdgeName)},
-					&simpletable.Cell{Align: simpletable.AlignRight, Text: edge.ToNode.String()})
+					&simpletable.Cell{Align: simpletable.AlignRight, Text: strconv.Itoa(int(edge.ToNode))})
 			} else {
-				r = append(r, &simpletable.Cell{Align: simpletable.AlignRight, Text: edge.FromNode.String()},
+				r = append(r, &simpletable.Cell{Align: simpletable.AlignRight, Text: strconv.Itoa(int(edge.FromNode))},
 					&simpletable.Cell{Align: simpletable.AlignRight, Text: string(edge.EdgeName)},
 					&simpletable.Cell{Align: simpletable.AlignRight, Text: "[ self ]"})
 			}
 		} else {
-			r = append(r, &simpletable.Cell{Align: simpletable.AlignRight, Text: edge.FromNode.String()},
+			r = append(r, &simpletable.Cell{Align: simpletable.AlignRight, Text: strconv.Itoa(int(edge.FromNode))},
 				&simpletable.Cell{Align: simpletable.AlignRight, Text: string(edge.EdgeName)},
-				&simpletable.Cell{Align: simpletable.AlignRight, Text: edge.ToNode.String()})
+				&simpletable.Cell{Align: simpletable.AlignRight, Text: strconv.Itoa(int(edge.ToNode))})
 		}
 
 		table.Body.Cells = append(table.Body.Cells, r)
