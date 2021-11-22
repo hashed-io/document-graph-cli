@@ -21,7 +21,7 @@ var getDocumentsCmd = &cobra.Command{
 		api := eos.New(viper.GetString("EosioEndpoint"))
 		ctx := context.Background()
 
-		docs, err := docgraph.GetAllDocuments(ctx, api, eos.AN(viper.GetString("DAOContract")))
+		docs, err := docgraph.GetAllDocuments(ctx, api, eos.AN(viper.GetString("Contract")))
 		if err != nil {
 			panic(fmt.Errorf("cannot get all documents: %v", err))
 		}

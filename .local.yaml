@@ -1,5 +1,7 @@
 EosioEndpoint: http://localhost:8888
 AssetsAsFloat: true
-Contract: documents2
-UserAccount: johnnyhypha1
+Contract: documents
+UserAccount: creator1
 GeneratedDir: _generated
+Vault: false
+Keys: ["5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3"]

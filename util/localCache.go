@@ -78,6 +78,7 @@ func FreshCache(ctx context.Context, api *eos.API, contract eos.AccountName) (*G
 		gCache.DocsByType[string(docType)] = append(gCache.DocsByType[string(docType)], document.Hash.String())
 		gCache.Cache.Set(document.Hash.String()[:5], document.Hash.String(), cache.DefaultExpiration)
 		gCache.Cache.Set(document.Hash.String(), document, cache.DefaultExpiration)
+		gCache.Cache.Set(strconv.Itoa(int(document.ID)), document, cache.DefaultExpiration)
 	}
 	gCache.Cache.Set("DocsByType", gCache.DocsByType, cache.DefaultExpiration)
 

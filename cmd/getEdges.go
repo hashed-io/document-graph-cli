@@ -20,7 +20,7 @@ var getEdgesCmd = &cobra.Command{
 		api := eos.New(viper.GetString("EosioEndpoint"))
 		ctx := context.Background()
 
-		edges, err := docgraph.GetAllEdges(ctx, api, eos.AN(viper.GetString("DAOContract")))
+		edges, err := docgraph.GetAllEdges(ctx, api, eos.AN(viper.GetString("Contract")))
 		if err != nil {
 			panic(fmt.Errorf("cannot get all edges: %v", err))
 		}

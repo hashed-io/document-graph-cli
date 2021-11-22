@@ -156,15 +156,15 @@ func (e *edgeChoice) GetWidth() int {
 	return 25
 }
 
-func getPage(ctx context.Context, api *eos.API, pageCache, documentCache *cache.Cache, contract eos.AccountName, hash string) Page {
-	pager, found := pageCache.Get(hash)
+func getPage(ctx context.Context, api *eos.API, pageCache, documentCache *cache.Cache, contract eos.AccountName, id uint64) Page {
+	pager, found := pageCache.Get(strconv.Itoa(int(id)))
 	if found {
 		return pager.(Page)
 	}
 
 	var err error
 	page := Page{}
-	page.Primary = getDocument(ctx, api, documentCache, contract, hash)
+	page.Primary = getDocument(ctx, api, documentCache, contract, id)
 
 	page.FromEdges, err = docgraph.GetEdgesFromDocument(ctx, api, contract, page.Primary)
 	if err != nil {
@@ -180,7 +180,7 @@ func getPage(ctx context.Context, api *eos.API, pageCache, documentCache *cache.
 
 	for i, edge := range page.FromEdges {
 
-		document := getDocument(ctx, api, documentCache, contract, strconv.Itoa(int(edge.ToNode)))
+		document := getDocument(ctx, api, documentCache, contract, edge.ToNode)
 
 		page.EdgePrompts[i] = edgeChoice{
 			Name:        edge.EdgeName,
@@ -197,7 +197,7 @@ func getPage(ctx context.Context, api *eos.API, pageCache, documentCache *cache.
 
 	for i, edge := range page.ToEdges {
 
-		document := getDocument(ctx, api, documentCache, contract, strconv.Itoa(int(edge.FromNode)))
+		document := getDocument(ctx, api, documentCache, contract, edge.FromNode)
 
 		page.EdgePrompts[i+len(page.FromEdges)] = edgeChoice{
 			Name:        edge.EdgeName,
@@ -226,16 +226,16 @@ func getPage(ctx context.Context, api *eos.API, pageCache, documentCache *cache.
 	return page
 }
 
-func getDocument(ctx context.Context, api *eos.API, c *cache.Cache, contract eos.AccountName, hash string) docgraph.Document {
+func getDocument(ctx context.Context, api *eos.API, c *cache.Cache, contract eos.AccountName, id uint64) docgraph.Document {
 
-	documenter, found := c.Get(hash)
+	documenter, found := c.Get(strconv.Itoa(int(id)))
 	if found {
 		return documenter.(docgraph.Document)
 	}
 
-	document, err := docgraph.LoadDocument(ctx, api, contract, hash)
+	document, err := docgraph.LoadDocumentByID(ctx, api, contract, id)
 	if err != nil {
-		log.Println("Document not found: " + hash)
+		log.Println("Document not found: " + strconv.Itoa(int(id)))
 		return docgraph.Document{}
 	}
 	c.Set(document.Hash.String(), document, cache.DefaultExpiration)
@@ -243,17 +243,17 @@ func getDocument(ctx context.Context, api *eos.API, c *cache.Cache, contract eos
 	return document
 }
 
-func loadCache(ctx context.Context, api *eos.API, pages, documents *cache.Cache, contract eos.AccountName, startingNode string) {
+func loadCache(ctx context.Context, api *eos.API, pages, documents *cache.Cache, contract eos.AccountName, startingNode uint64) {
 
 	go func() {
 		page := getPage(ctx, api, pages, documents, contract, startingNode)
 
 		for _, edge := range page.ToEdges {
-			getPage(ctx, api, pages, documents, contract, strconv.Itoa(int(edge.ToNode)))
+			getPage(ctx, api, pages, documents, contract, edge.ToNode)
 		}
 
 		for _, edge := range page.FromEdges {
-			getPage(ctx, api, pages, documents, contract, strconv.Itoa(int(edge.ToNode)))
+			getPage(ctx, api, pages, documents, contract, edge.ToNode)
 		}
 	}()
 }
@@ -266,9 +266,9 @@ var getDocumentCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		api := eos.New(viper.GetString("EosioEndpoint"))
 		ctx := context.Background()
-		contract := eos.AN(viper.GetString("DAOContract"))
+		contract := eos.AN(viper.GetString("Contract"))
 
-		var hash string
+		var id uint64
 
 		// if last==true OR no argument, use the last document
 		if viper.GetBool("get-document-cmd-last") || len(args) == 0 {
@@ -276,14 +276,14 @@ var getDocumentCmd = &cobra.Command{
 			if err != nil {
 				return fmt.Errorf("cannot get last document: %v", err)
 			}
-			hash = lastDocument.Hash.String()
+			id = lastDocument.ID
 		}
 
 		// if getting a document with JSON, just print it out and exit
 		if viper.GetBool("get-document-cmd-json") {
-			document, err := util.Get(ctx, api, contract, hash)
+			document, err := util.Get(ctx, api, contract, strconv.Itoa(int(id)))
 			if err != nil {
-				return fmt.Errorf("cannot find document with hash: %v %v", hash, err)
+				return fmt.Errorf("cannot find document with hash: %v %v", id, err)
 			}
 
 			docJson, err := json.Marshal(document)
@@ -296,7 +296,12 @@ var getDocumentCmd = &cobra.Command{
 		}
 
 		if len(args) == 1 {
-			hash = args[0]
+			idInt, err := strconv.Atoi(args[0])
+			if err != nil {
+				return fmt.Errorf("parameter must be formatted as int: %v %v", args[0], err)
+			}
+
+			id = uint64(idInt)
 		}
 
 		var page Page
@@ -305,9 +310,9 @@ var getDocumentCmd = &cobra.Command{
 
 		for {
 
-			page = getPage(ctx, api, pages, documents, contract, hash)
+			page = getPage(ctx, api, pages, documents, contract, id)
 
-			loadCache(ctx, api, pages, documents, contract, hash)
+			loadCache(ctx, api, pages, documents, contract, id)
 
 			printDocument(ctx, api, &page)
 
@@ -345,7 +350,8 @@ var getDocumentCmd = &cobra.Command{
 				fmt.Println("-------------------------------------------------------------------------------------------------")
 				fmt.Println()
 
-				hash = page.EdgePrompts[i].To
+				interimId, _ := strconv.Atoi(page.EdgePrompts[i].To)
+				id = uint64(interimId)
 			} else {
 				return nil
 			}

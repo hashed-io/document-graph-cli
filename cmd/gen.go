@@ -12,12 +12,14 @@ import (
 
 	"github.com/bxcodec/faker/v3"
 	"github.com/eoscanada/eos-go"
+	"github.com/hashed-io/document-graph-cli/e"
 	"github.com/hashed-io/document-graph/docgraph"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 type FakeSocialUser struct {
+	ID        uint64 `faker:"-"`
 	UserName  string `faker:"-"`
 	DOB       string `faker:"date"`
 	Timezone  string `faker:"timezone"`
@@ -28,7 +30,7 @@ type FakeSocialUser struct {
 }
 
 type FakeSocialPost struct {
-	// ID      uint64
+	ID      uint64    `faker:"-"`
 	Author  string    `faker:"-"`
 	Created string    `faker:"timestamp"`
 	Title   string    `faker:"sentence"`
@@ -112,15 +114,21 @@ var genCmd = &cobra.Command{
 			doc.ContentGroups = cgs
 
 			docString, _ := json.MarshalIndent(doc, "", " ")
-			fmt.Printf("%+v\n\n", string(docString))
 
 			filename := viper.GetString("GeneratedDir") + "/user_" + user.UserName + ".json"
 			_ = ioutil.WriteFile(filename, docString, 0644)
-			// createdDocument, err := docgraph.CreateDocument(e.E().X, e.E().A, e.E().Contract, e.E().User, filename)
-			// if err != nil {
-			// 	panic(err)
-			// }
-			// fmt.Println("Successfully created document.	ID 	: " + strconv.Itoa(int(createdDocument.ID)))
+
+			contentGroupsString, _ := json.Marshal(doc.ContentGroups)
+			csgString := "{\"content_groups\":" + string(contentGroupsString) + "}"
+			// fmt.Printf("%+v\n\n", csgString)
+
+			createdDoc, err := newDocumentFromString(e.E().X, e.E().A, e.E().Contract, e.E().User, csgString)
+			if err != nil {
+				panic(err)
+			}
+
+			fmt.Println("Successfully created document.	ID 	: " + strconv.Itoa(int(createdDoc.ID)))
+			user.ID = createdDoc.ID
 			users[i] = user
 		}
 
@@ -132,6 +140,7 @@ var genCmd = &cobra.Command{
 				panic(err)
 			}
 
+			author := users[randInt(0, len(users))]
 			systemGroup := make([]docgraph.ContentItem, 3)
 			systemGroup[0] = constructContentItem("content_group_label", "string", "system")
 			systemGroup[1] = constructContentItem("type", "name", "post")
@@ -139,7 +148,7 @@ var genCmd = &cobra.Command{
 
 			detailsGroup := make([]docgraph.ContentItem, 5)
 			detailsGroup[0] = constructContentItem("content_group_label", "string", "details")
-			detailsGroup[1] = constructContentItem("author", "name", users[randInt(0, len(users))].UserName) //users[rand.Intn(len(users))].UserName)
+			detailsGroup[1] = constructContentItem("author", "name", author.UserName) //users[rand.Intn(len(users))].UserName)
 			detailsGroup[2] = constructContentItem("title", "string", post.Title)
 			detailsGroup[3] = constructContentItem("content", "string", post.Content)
 
@@ -156,8 +165,36 @@ var genCmd = &cobra.Command{
 			doc.ContentGroups = cgs
 
 			docString, _ := json.MarshalIndent(doc, "", " ")
-			fmt.Printf("%+v\n\n", string(docString))
+			// fmt.Printf("%+v\n\n", string(docString))
 			_ = ioutil.WriteFile(viper.GetString("GeneratedDir")+"/post_"+strings.ReplaceAll(post.Title, " ", "_")+"json", docString, 0644)
+
+			contentGroupsString, _ := json.Marshal(doc.ContentGroups)
+			csgString := "{\"content_groups\":" + string(contentGroupsString) + "}"
+			//fmt.Printf("%+v\n\n", csgString)
+
+			createdDoc, err := newDocumentFromString(e.E().X, e.E().A, e.E().Contract, e.E().User, csgString)
+			if err != nil {
+				panic(err)
+			}
+
+			fmt.Println("Successfully created document.	ID 	: " + strconv.Itoa(int(createdDoc.ID)))
+
+			post.ID = createdDoc.ID
+
+			_, err = docgraph.CreateEdge(e.E().X, e.E().A, e.E().Contract, e.E().User, author.ID, post.ID, eos.Name("authored"))
+			if err != nil {
+				panic(err)
+			}
+			fmt.Println("Successfully created edge.")
+
+			for i := 0; i < 4; i++ {
+				_, err = docgraph.CreateEdge(e.E().X, e.E().A, e.E().Contract, e.E().User, users[randInt(0, len(users))].ID, post.ID, eos.Name("liked"))
+				if err != nil {
+					fmt.Println("liked failed")
+				} else {
+					fmt.Println("post is liked")
+				}
+			}
 
 			posts[i] = post
 		}
