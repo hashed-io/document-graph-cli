@@ -14,8 +14,8 @@ import (
 
 var getEdgesCmd = &cobra.Command{
 	Use:   "edges",
-	Short: "query edges",
-	Long:  "query edges",
+	Short: "print a list of all edges [ONLY use on very small graphs - no optimization]",
+	Long:  "print a list of all edges [ONLY use on very small graphs - no optimization]",
 	Run: func(cmd *cobra.Command, args []string) {
 		api := eos.New(viper.GetString("EosioEndpoint"))
 		ctx := context.Background()

@@ -13,9 +13,9 @@ import (
 )
 
 var getDocumentsCmd = &cobra.Command{
-	Use:   "documents [scope]",
-	Short: "query and manage documents",
-	Long:  "query and manage documents",
+	Use:   "documents",
+	Short: "print a list of documents",
+	Long:  "print a list of documents",
 	// Args:  cobra.RangeArgs(1, 2),
 	Run: func(cmd *cobra.Command, args []string) {
 		api := eos.New(viper.GetString("EosioEndpoint"))

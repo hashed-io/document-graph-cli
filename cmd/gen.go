@@ -16,6 +16,7 @@ import (
 	"github.com/hashed-io/document-graph/docgraph"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"go.uber.org/zap"
 )
 
 type FakeSocialUser struct {
@@ -69,13 +70,13 @@ func constructContentItem(label, typeS string, val interface{}) docgraph.Content
 				Impl:   val}}}
 }
 
-var userCount, postCount int
+var userCount, postCount, likesCount int
 
 var genCmd = &cobra.Command{
 	Use:   "gen",
 	Short: "generate graph data",
-	Long:  "generate graph data",
-	Run: func(cmd *cobra.Command, args []string) {
+	Long:  "generate social media style fake graph data",
+	RunE: func(cmd *cobra.Command, args []string) error {
 
 		os.MkdirAll(viper.GetString("GeneratedDir"), os.ModePerm)
 
@@ -88,7 +89,7 @@ var genCmd = &cobra.Command{
 			}
 			err := faker.FakeData(&user)
 			if err != nil {
-				panic(err)
+				return fmt.Errorf("cannot generate fake data: %v", err)
 			}
 
 			systemGroup := make([]docgraph.ContentItem, 3)
@@ -120,14 +121,15 @@ var genCmd = &cobra.Command{
 
 			contentGroupsString, _ := json.Marshal(doc.ContentGroups)
 			csgString := "{\"content_groups\":" + string(contentGroupsString) + "}"
-			// fmt.Printf("%+v\n\n", csgString)
 
 			createdDoc, err := newDocumentFromString(e.E().X, e.E().A, e.E().Contract, e.E().User, csgString)
 			if err != nil {
-				panic(err)
+				zlog.Error("cannot create new document from string", zap.String("content-groups", csgString))
+				return fmt.Errorf("cannot create new document from string: %v", err)
 			}
 
-			fmt.Println("Successfully created document.	ID 	: " + strconv.Itoa(int(createdDoc.ID)))
+			zlog.Debug("created document", zap.String("document-id", strconv.Itoa(int(createdDoc.ID))))
+
 			user.ID = createdDoc.ID
 			users[i] = user
 		}
@@ -137,7 +139,8 @@ var genCmd = &cobra.Command{
 
 			err := faker.FakeData(&post)
 			if err != nil {
-				panic(err)
+				zlog.Error("cannot create fake post", zap.Error(err))
+				return fmt.Errorf("cannot create new document from string: %v", err)
 			}
 
 			author := users[randInt(0, len(users))]
@@ -165,45 +168,48 @@ var genCmd = &cobra.Command{
 			doc.ContentGroups = cgs
 
 			docString, _ := json.MarshalIndent(doc, "", " ")
-			// fmt.Printf("%+v\n\n", string(docString))
 			_ = ioutil.WriteFile(viper.GetString("GeneratedDir")+"/post_"+strings.ReplaceAll(post.Title, " ", "_")+"json", docString, 0644)
 
 			contentGroupsString, _ := json.Marshal(doc.ContentGroups)
 			csgString := "{\"content_groups\":" + string(contentGroupsString) + "}"
-			//fmt.Printf("%+v\n\n", csgString)
 
 			createdDoc, err := newDocumentFromString(e.E().X, e.E().A, e.E().Contract, e.E().User, csgString)
 			if err != nil {
-				panic(err)
+				zlog.Error("cannot create new document from string", zap.String("content-groups", csgString))
+				return fmt.Errorf("cannot create new document from string: %v", err)
+
 			}
 
-			fmt.Println("Successfully created document.	ID 	: " + strconv.Itoa(int(createdDoc.ID)))
-
+			zlog.Debug("created document", zap.String("document-id", strconv.Itoa(int(createdDoc.ID))))
 			post.ID = createdDoc.ID
 
-			_, err = docgraph.CreateEdge(e.E().X, e.E().A, e.E().Contract, e.E().User, author.ID, post.ID, eos.Name("authored"))
+			createdEdge, err := docgraph.CreateEdge(e.E().X, e.E().A, e.E().Contract, e.E().User, author.ID, post.ID, eos.Name("authored"))
 			if err != nil {
-				panic(err)
+				zlog.Error("cannot create new edge", zap.Uint64("author-id", author.ID), zap.Uint64("post-id", post.ID))
+				return fmt.Errorf("cannot create new edge from string: %v", err)
 			}
-			fmt.Println("Successfully created edge.")
 
-			for i := 0; i < 4; i++ {
+			zlog.Debug("created edge", zap.String("transaction-id", createdEdge))
+
+			for i := 0; i < likesCount; i++ {
 				_, err = docgraph.CreateEdge(e.E().X, e.E().A, e.E().Contract, e.E().User, users[randInt(0, len(users))].ID, post.ID, eos.Name("liked"))
 				if err != nil {
-					fmt.Println("liked failed")
+					zlog.Debug("create 'liked' edge failed; likely just a duplicate since these are random; just skip", zap.Uint64("user-id", users[randInt(0, len(users))].ID), zap.Uint64("post-id", post.ID))
 				} else {
-					fmt.Println("post is liked")
+					zlog.Debug("create 'liked' edge sucessful", zap.Uint64("user-id", users[randInt(0, len(users))].ID), zap.Uint64("post-id", post.ID))
 				}
 			}
 
 			posts[i] = post
 		}
+		return nil
 	},
 }
 
 func init() {
-	genCmd.Flags().IntVarP(&userCount, "users", "u", 1, "number of documents to generate")
-	genCmd.Flags().IntVarP(&postCount, "posts", "p", 1, "number of posts to generate")
+	genCmd.Flags().IntVarP(&userCount, "users", "u", 4, "number of documents to generate")
+	genCmd.Flags().IntVarP(&likesCount, "likes", "l", 5, "number of posts to generate")
+	genCmd.Flags().IntVarP(&postCount, "posts", "p", 15, "number of posts to generate")
 
 	RootCmd.AddCommand(genCmd)
 }

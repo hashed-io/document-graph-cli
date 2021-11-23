@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"strconv"
 
 	eostest "github.com/digital-scarcity/eos-go-test"
@@ -12,6 +11,8 @@ import (
 	"go.uber.org/zap"
 )
 
+var wasmPath, abiPath string
+
 var deployCmd = &cobra.Command{
 	Use:   "deploy",
 	Short: "deploy contracts",
@@ -21,7 +22,7 @@ var deployCmd = &cobra.Command{
 		keyBag := &eos.KeyBag{}
 		err := keyBag.ImportPrivateKey(e.E().X, eostest.DefaultKey())
 		if err != nil {
-			panic(fmt.Errorf("import private key failed: %v", err))
+			zlog.Error("cannot import private key"+viper.GetString("UserAccount"), zap.Error(err))
 		}
 
 		e.E().A.SetSigner(keyBag)
@@ -30,9 +31,9 @@ var deployCmd = &cobra.Command{
 		if err != nil {
 			zlog.Error("cannot create contract account - probably exists already: "+viper.GetString("Contract"), zap.Error(err))
 		}
-		_, err = eostest.SetContract(e.Env.X, e.E().A, contract, "../document-graph/build/docs/docs.wasm", "../document-graph/build/docs/docs.abi")
+		_, err = eostest.SetContract(e.Env.X, e.E().A, contract, wasmPath, abiPath)
 		if err != nil {
-			panic(fmt.Errorf("cannot set contract: %v", err))
+			zlog.Debug("cannot set contract", zap.String("wasm-path", wasmPath), zap.String("abi-path", abiPath))
 		}
 
 		_, err = eostest.CreateAccountFromString(e.Env.X, e.E().A, viper.GetString("UserAccount"), eostest.DefaultKey())
@@ -40,16 +41,19 @@ var deployCmd = &cobra.Command{
 			zlog.Error("cannot create user account - probably exists already: "+viper.GetString("UserAccount"), zap.Error(err))
 		}
 
-		for i := 1; i < 5; i++ {
+		for i := 1; i < userCount; i++ {
 
 			_, err := eostest.CreateAccountFromString(e.Env.X, e.E().A, "user"+strconv.Itoa(i), eostest.DefaultKey())
 			if err != nil {
-				zlog.Error("cannot create user account - probably exists already: "+"user"+strconv.Itoa(i), zap.Error(err))
+				zlog.Error("cannot create account - probably exists already", zap.String("account-name", "user"+strconv.Itoa(i)), zap.Error(err))
 			}
 		}
 	},
 }
 
 func init() {
+	deployCmd.Flags().StringVar(&abiPath, "wasm-path", "../document-graph/build/docs/docs.wasm", "path to the wasm file to deploy")
+	deployCmd.Flags().StringVar(&abiPath, "abi-path", "../document-graph/build/docs/docs.abi", "path to the abi file to deploy")
+
 	RootCmd.AddCommand(deployCmd)
 }

@@ -6,7 +6,7 @@ import (
 
 var createCmd = &cobra.Command{
 	Use:   "create",
-	Short: "create objects in the Document Graph",
+	Short: "create documents or edges in the Document Graph",
 }
 
 func init() {

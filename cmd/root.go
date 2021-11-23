@@ -24,7 +24,8 @@ func init() {
 var RootCmd = &cobra.Command{
 	Use:   "dgctl",
 	Short: "CLI for Document Graph",
-	Long:  "CLI for Document Graph",
+	Long: `			Command line application written in Go for 
+			interacting with an on-chain Document Graph`,
 }
 
 func Execute() {
