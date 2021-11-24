@@ -74,4 +74,4 @@ View a specific document and begin navigating
 ```
 
 # Generated Social Media data structure
-![generated-social-media-data-structure](//www.plantuml.com/plantuml/png/SoWkIImgAStDuKh9J2zABCXGS5Uevb80WgB4lEoKp29Rdo1hC3-qEBL8GTTE8I2_k4GXEYSnAJN7LYcnj2GZloWrHIaMZwASp6mC5M0QhY8jFoSdlxmOfAQMoo4rBmNe8000)
+![generated-social-media-data-structure](http://www.plantuml.com/plantuml/png/SoWkIImgAStDuKh9J2zABCXGS5Uevb80WgB4lEoKp29Rdo1hC3-qEBL8GTTE8I2_k4GXEYSnAJN7LYcnj2GZloWrHIaMZwASp6mC5M0QhY8jFoSdlxmOfAQMoo4rBmNe8000)
