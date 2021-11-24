@@ -72,3 +72,6 @@ View a specific document and begin navigating
 ```
 ./bin/dgctl --config .testnet.yaml get document 35
 ```
+
+# Generated Social Media data structure
+![your-UML-diagram-name](http://www.plantuml.com/plantuml/proxy?cache=no&src=https://raw.githubusercontent.com/hashed-io/document-graph-cli/docs/social-media-generated.iuml)

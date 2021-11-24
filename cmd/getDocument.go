@@ -11,10 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/alexeyco/simpletable"
 	"github.com/eoscanada/eos-go"
 	"github.com/hashed-io/document-graph-cli/util"
-	"github.com/hashed-io/document-graph-cli/views"
 	"github.com/hashed-io/document-graph/docgraph"
 	"github.com/manifoldco/promptui"
 	"github.com/patrickmn/go-cache"
@@ -22,6 +20,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tidwall/pretty"
+	"go.uber.org/zap"
 )
 
 func cleanString(input string) string {
@@ -48,49 +47,49 @@ func printContentGroups(p *Page) {
 	fmt.Println()
 }
 
-func printEdges(ctx context.Context, api *eos.API, p *Page) {
+// func printEdges(ctx context.Context, api *eos.API, p *Page) {
 
-	colorCyan := "\033[36m"
-	colorReset := "\033[0m"
-	colorRed := "\033[31m"
+// 	colorCyan := "\033[36m"
+// 	colorReset := "\033[0m"
+// 	colorRed := "\033[31m"
 
-	if len(p.ToEdges) > 0 {
+// 	if len(p.ToEdges) > 0 {
 
-		sort.SliceStable(p.ToEdges, func(i, j int) bool {
-			return p.ToEdges[i].CreatedDate.Before(p.ToEdges[j].CreatedDate.Time)
-		})
+// 		sort.SliceStable(p.ToEdges, func(i, j int) bool {
+// 			return p.ToEdges[i].CreatedDate.Before(p.ToEdges[j].CreatedDate.Time)
+// 		})
 
-		toEdgesTable := views.EdgeTable(p.ToEdges, true, false)
-		toEdgesTable.SetStyle(simpletable.StyleCompactLite)
+// 		toEdgesTable := views.EdgeTable(p.ToEdges, true, false)
+// 		toEdgesTable.SetStyle(simpletable.StyleCompactLite)
 
-		fmt.Print(string(colorCyan), "\n                                                                                           to this node  ---------->")
-		fmt.Println(string(colorReset))
-		fmt.Println("\n" + toEdgesTable.String() + "\n\n")
-	}
+// 		fmt.Print(string(colorCyan), "\n                                                                                           to this node  ---------->")
+// 		fmt.Println(string(colorReset))
+// 		fmt.Println("\n" + toEdgesTable.String() + "\n\n")
+// 	}
 
-	if len(p.FromEdges) > 0 {
+// 	if len(p.FromEdges) > 0 {
 
-		sort.SliceStable(p.FromEdges, func(i, j int) bool {
-			return p.FromEdges[i].CreatedDate.Before(p.FromEdges[j].CreatedDate.Time)
-		})
+// 		sort.SliceStable(p.FromEdges, func(i, j int) bool {
+// 			return p.FromEdges[i].CreatedDate.Before(p.FromEdges[j].CreatedDate.Time)
+// 		})
 
-		fromEdgesTable := views.EdgeTable(p.FromEdges, true, true)
-		fromEdgesTable.SetStyle(simpletable.StyleCompactLite)
+// 		fromEdgesTable := views.EdgeTable(p.FromEdges, true, true)
+// 		fromEdgesTable.SetStyle(simpletable.StyleCompactLite)
 
-		fmt.Print(string(colorCyan), "\n                                    from this node  ---------->")
-		fmt.Println(string(colorReset))
-		fmt.Println("\n" + fromEdgesTable.String() + "\n\n")
-		// fmt.Print(string(colorCyan), "\n  <---   use 'rev <edge-name>' for reverse                                        use 'fwd <edge-name>' for forward --->")
-		// fmt.Print(string(colorCyan), "\n  <edge-name> defaults to first in list if left blank")
-		fmt.Println(string(colorReset))
+// 		fmt.Print(string(colorCyan), "\n                                    from this node  ---------->")
+// 		fmt.Println(string(colorReset))
+// 		fmt.Println("\n" + fromEdgesTable.String() + "\n\n")
+// 		// fmt.Print(string(colorCyan), "\n  <---   use 'rev <edge-name>' for reverse                                        use 'fwd <edge-name>' for forward --->")
+// 		// fmt.Print(string(colorCyan), "\n  <edge-name> defaults to first in list if left blank")
+// 		fmt.Println(string(colorReset))
 
-	} else {
-		fmt.Print(string(colorRed), "\n                                                                                                        ----------")
-		fmt.Print(string(colorRed), "\n                                                                                                        |  END   |")
-		fmt.Print(string(colorRed), "\n                                                                                                        ----------")
-		fmt.Println(string(colorReset))
-	}
-}
+// 	} else {
+// 		fmt.Print(string(colorRed), "\n                                                                                                        ----------")
+// 		fmt.Print(string(colorRed), "\n                                                                                                        |  END   |")
+// 		fmt.Print(string(colorRed), "\n                                                                                                        ----------")
+// 		fmt.Println(string(colorReset))
+// 	}
+// }
 
 func printDocument(ctx context.Context, api *eos.API, p *Page) {
 	fmt.Println("Document Details")
@@ -118,9 +117,9 @@ type Page struct {
 	Graph       image.Image
 }
 
-func (p *Page) getKey() string {
-	return p.Primary.Hash.String()
-}
+// func (p *Page) getKey() string {
+// 	return p.Primary.Hash.String()
+// }
 
 func getLabel(d *docgraph.Document) string {
 	documentLabel, _ := d.GetContent("node_label")
@@ -156,15 +155,19 @@ func (e *edgeChoice) GetWidth() int {
 	return 25
 }
 
-func getPage(ctx context.Context, api *eos.API, pageCache, documentCache *cache.Cache, contract eos.AccountName, id uint64) Page {
+func getPage(ctx context.Context, api *eos.API, pageCache, documentCache *cache.Cache, contract eos.AccountName, id uint64) (Page, error) {
 	pager, found := pageCache.Get(strconv.Itoa(int(id)))
 	if found {
-		return pager.(Page)
+		return pager.(Page), nil
 	}
 
 	var err error
 	page := Page{}
-	page.Primary = getDocument(ctx, api, documentCache, contract, id)
+	page.Primary, err = getDocument(ctx, api, documentCache, contract, id)
+	if err != nil {
+		zlog.Error("document not found", zap.Uint64("document-id", id))
+		return page, err
+	}
 
 	page.FromEdges, err = docgraph.GetEdgesFromDocument(ctx, api, contract, page.Primary)
 	if err != nil {
@@ -180,7 +183,11 @@ func getPage(ctx context.Context, api *eos.API, pageCache, documentCache *cache.
 
 	for i, edge := range page.FromEdges {
 
-		document := getDocument(ctx, api, documentCache, contract, edge.ToNode)
+		document, err := getDocument(ctx, api, documentCache, contract, edge.ToNode)
+		if err != nil {
+			zlog.Error("document not found", zap.Uint64("document-id", id))
+			return Page{}, err
+		}
 
 		page.EdgePrompts[i] = edgeChoice{
 			Name:        edge.EdgeName,
@@ -197,7 +204,11 @@ func getPage(ctx context.Context, api *eos.API, pageCache, documentCache *cache.
 
 	for i, edge := range page.ToEdges {
 
-		document := getDocument(ctx, api, documentCache, contract, edge.FromNode)
+		document, err := getDocument(ctx, api, documentCache, contract, edge.FromNode)
+		if err != nil {
+			zlog.Error("document not found", zap.Uint64("document-id", id))
+			return Page{}, err
+		}
 
 		page.EdgePrompts[i+len(page.FromEdges)] = edgeChoice{
 			Name:        edge.EdgeName,
@@ -223,39 +234,53 @@ func getPage(ctx context.Context, api *eos.API, pageCache, documentCache *cache.
 
 	pageCache.Set(page.Primary.Hash.String(), page, cache.DefaultExpiration)
 
-	return page
+	return page, nil
 }
 
-func getDocument(ctx context.Context, api *eos.API, c *cache.Cache, contract eos.AccountName, id uint64) docgraph.Document {
+func getDocument(ctx context.Context, api *eos.API, c *cache.Cache, contract eos.AccountName, id uint64) (docgraph.Document, error) {
 
 	documenter, found := c.Get(strconv.Itoa(int(id)))
 	if found {
-		return documenter.(docgraph.Document)
+		return documenter.(docgraph.Document), nil
 	}
 
 	document, err := docgraph.LoadDocumentByID(ctx, api, contract, id)
 	if err != nil {
-		log.Println("Document not found: " + strconv.Itoa(int(id)))
-		return docgraph.Document{}
+		zlog.Error("document not found", zap.Uint64("document-id", id))
+		return docgraph.Document{}, err
 	}
 	c.Set(document.Hash.String(), document, cache.DefaultExpiration)
 
-	return document
+	return document, nil
 }
 
-func loadCache(ctx context.Context, api *eos.API, pages, documents *cache.Cache, contract eos.AccountName, startingNode uint64) {
+func loadCache(ctx context.Context, api *eos.API, pages, documents *cache.Cache, contract eos.AccountName, startingNode uint64) error {
 
-	go func() {
-		page := getPage(ctx, api, pages, documents, contract, startingNode)
+	go func() error {
+		page, err := getPage(ctx, api, pages, documents, contract, startingNode)
+		if err != nil {
+			zlog.Error("error getting page", zap.Uint64("document-id", startingNode), zap.Error(err))
+			return fmt.Errorf("error getting page: %v", err)
+		}
 
 		for _, edge := range page.ToEdges {
-			getPage(ctx, api, pages, documents, contract, edge.ToNode)
+			_, err := getPage(ctx, api, pages, documents, contract, edge.ToNode)
+			if err != nil {
+				zlog.Error("error getting page", zap.Uint64("document-id", edge.ToNode), zap.Error(err))
+				return fmt.Errorf("error getting page: %v", err)
+			}
 		}
 
 		for _, edge := range page.FromEdges {
-			getPage(ctx, api, pages, documents, contract, edge.ToNode)
+			_, err := getPage(ctx, api, pages, documents, contract, edge.ToNode)
+			if err != nil {
+				zlog.Error("error getting page", zap.Uint64("document-id", edge.ToNode), zap.Error(err))
+				return fmt.Errorf("error getting page: %v", err)
+			}
 		}
+		return nil
 	}()
+	return nil
 }
 
 var getDocumentCmd = &cobra.Command{
@@ -304,13 +329,16 @@ var getDocumentCmd = &cobra.Command{
 			id = uint64(idInt)
 		}
 
-		var page Page
 		pages := cache.New(5*time.Minute, 10*time.Minute)
 		documents := cache.New(5*time.Minute, 10*time.Minute)
 
 		for {
 
-			page = getPage(ctx, api, pages, documents, contract, id)
+			page, err := getPage(ctx, api, pages, documents, contract, id)
+			if err != nil {
+				zlog.Error("error getting page", zap.Uint64("document-id", id), zap.Error(err))
+				return fmt.Errorf("error getting page: %v", err)
+			}
 
 			loadCache(ctx, api, pages, documents, contract, id)
 
