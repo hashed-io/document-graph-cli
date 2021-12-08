@@ -138,6 +138,9 @@ var genCmd = &cobra.Command{
 			for j := 0; j < followerCount; j++ {
 				userFrom := users[randInt(0, len(users))].ID
 				userTo := users[i].ID
+
+				if userFrom == userTo { continue }
+
 				_, err := docgraph.CreateEdge(e.E().X, e.E().A, e.E().Contract, e.E().User, userFrom, userTo, eos.Name("follows"))
 				if err != nil {
 					zlog.Debug("create 'follows' edge failed; likely just a duplicate since these are random; just skip", zap.Uint64("user-from-id", userFrom), zap.Uint64("user-to-id", userTo))
