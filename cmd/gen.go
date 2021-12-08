@@ -70,7 +70,7 @@ func constructContentItem(label, typeS string, val interface{}) docgraph.Content
 				Impl:   val}}}
 }
 
-var userCount, postCount, likesCount int
+var userCount, postCount, likesCount, followerCount int
 
 var genCmd = &cobra.Command{
 	Use:   "gen",
@@ -134,6 +134,19 @@ var genCmd = &cobra.Command{
 			users[i] = user
 		}
 
+		for i := 0; i < len(users); i++ {
+			for j := 0; j < followerCount; j++ {
+				userFrom := users[randInt(0, len(users))].ID
+				userTo := users[i].ID
+				_, err := docgraph.CreateEdge(e.E().X, e.E().A, e.E().Contract, e.E().User, userFrom, userTo, eos.Name("follows"))
+				if err != nil {
+					zlog.Debug("create 'follows' edge failed; likely just a duplicate since these are random; just skip", zap.Uint64("user-from-id", userFrom), zap.Uint64("user-to-id", userTo))
+				} else {
+					zlog.Debug("create 'follows' edge sucessful", zap.Uint64("user-from-id", userFrom), zap.Uint64("user-to-id", userTo))
+				}
+			}
+		}
+
 		for i := 0; i < len(posts); i++ {
 			post := FakeSocialPost{}
 
@@ -192,11 +205,12 @@ var genCmd = &cobra.Command{
 			zlog.Debug("created edge", zap.String("transaction-id", createdEdge))
 
 			for i := 0; i < likesCount; i++ {
-				_, err = docgraph.CreateEdge(e.E().X, e.E().A, e.E().Contract, e.E().User, users[randInt(0, len(users))].ID, post.ID, eos.Name("liked"))
+				userFrom := users[randInt(0, len(users))].ID
+				_, err = docgraph.CreateEdge(e.E().X, e.E().A, e.E().Contract, e.E().User, userFrom, post.ID, eos.Name("liked"))
 				if err != nil {
-					zlog.Debug("create 'liked' edge failed; likely just a duplicate since these are random; just skip", zap.Uint64("user-id", users[randInt(0, len(users))].ID), zap.Uint64("post-id", post.ID))
+					zlog.Debug("create 'liked' edge failed; likely just a duplicate since these are random; just skip", zap.Uint64("user-id", userFrom), zap.Uint64("post-id", post.ID))
 				} else {
-					zlog.Debug("create 'liked' edge sucessful", zap.Uint64("user-id", users[randInt(0, len(users))].ID), zap.Uint64("post-id", post.ID))
+					zlog.Debug("create 'liked' edge sucessful", zap.Uint64("user-id", userFrom), zap.Uint64("post-id", post.ID))
 				}
 			}
 
@@ -208,8 +222,9 @@ var genCmd = &cobra.Command{
 
 func init() {
 	genCmd.Flags().IntVarP(&userCount, "users", "u", 4, "number of documents to generate")
-	genCmd.Flags().IntVarP(&likesCount, "likes", "l", 5, "number of posts to generate")
+	genCmd.Flags().IntVarP(&likesCount, "likes", "l", 5, "number of likes per post to generate")
 	genCmd.Flags().IntVarP(&postCount, "posts", "p", 15, "number of posts to generate")
+	genCmd.Flags().IntVarP(&followerCount, "followers", "f", 1, "number of followers per user to generate")
 
 	RootCmd.AddCommand(genCmd)
 }
