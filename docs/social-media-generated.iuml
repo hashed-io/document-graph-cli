@@ -1,0 +1,8 @@
+@startuml social-media-generated
+digraph G {
+    rankdir=LR;
+    User -> Post [label="authored"];
+    User -> Post [label="liked"];
+    User -> User [label="follows"];
+}
+@enduml

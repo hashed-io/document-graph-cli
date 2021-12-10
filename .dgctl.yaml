@@ -1,3 +1,7 @@
 EosioEndpoint: https://test.telos.kitchen
 AssetsAsFloat: true
-DAOContract: dao.hypha
+Contract: hasheddocgrh
+UserAccount: hasheduser11
+GeneratedDir: _generated
+Vault: false
+Keys: ["5KQwrPbwdL6PhXujxW37FSSQZ1JiwsST4cqQzDeyXtP79zkvFD3", "5Kdp6CQRq6MwZVjCFcfjSNeGceD3RZ1rtcQiyaz7sEv7SdR4E6r"]
